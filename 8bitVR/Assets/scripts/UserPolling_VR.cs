@@ -15,14 +15,17 @@ using System.Collections;
  */
 public class UserPolling_VR : MonoBehaviour
 {
-    public embeddedBridge embeddedData;
     public SerialController serialController;
+
+    // This is incase I wish to share COM BUS with multiple Game Object
+    // Currently my Bridge manages everything
+    public embeddedBridge embeddedData;
 
     // Initialization
     void Start()
     {
+        // Get the COM port instance
         serialController = GameObject.Find("SerialController").GetComponent<SerialController>();
-        Debug.Log("Press A or Z to execute some actions");
     }
 
     // Executed each frame
@@ -31,38 +34,13 @@ public class UserPolling_VR : MonoBehaviour
         //---------------------------------------------------------------------
         // Send data
         //---------------------------------------------------------------------
-        if (embeddedData.getButtonState())
-        {
-            if (embeddedData.getVRButtonState() == true)
-            {
-                Debug.Log("Sent led0 on");
-            }
-            if (embeddedData.getVRButtonState() == false)
-            {
-                Debug.Log("Sent led0 off");
-            }
-            embeddedData.setButtonState(false);
-        }
-        // If you press one of these keys send it to the serial device. A
-        // sample serial device that accepts this input is given in the README.
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            Debug.Log("led0 on");
-            serialController.SendSerialMessage("led0 on");
-        }
-
-        if (Input.GetKeyDown(KeyCode.Z))
-        {
-            Debug.Log("led0 off");
-            serialController.SendSerialMessage("led0 off");
-        }
+        
+        // Application Sends Data through embeddedBridge <embeddedData>
 
         //---------------------------------------------------------------------
         // Receive data
         //---------------------------------------------------------------------
-
         string message = serialController.ReadSerialMessage();
-
         if (message == null)
         { 
             return;
@@ -78,11 +56,11 @@ public class UserPolling_VR : MonoBehaviour
         {
             Debug.Log("Connection attempt failed or disconnection detected");
         }
-
         else
         {
-            Debug.Log("Message arrived: " + message);
+            // Pass to Object for inspection
             embeddedData.processMessageData(message);
+            // Debug.Log("Message arrived: " + message);
         }
     }
 }
