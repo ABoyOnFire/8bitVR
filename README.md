@@ -17,9 +17,9 @@ PIC16LF18456, ATMega4809, PIC18F47K40
 # Communication Formats
 - Testing (Legacy Format)
     - Message is split on the ' ' character
-0   1  2 3 4 5 6 7 8 9 10 11 12 13 14 
-T +/-# . # A X # Y # Z #  P 0/1 L  0/1
-E.G. T +25 . 625 A X 10 Y -50 Z 192 P 0 L 1
+    - 0   1  2 3 4 5 6 7 8 9 10 11 12 13 14 
+    - T +/-# . # A X # Y # Z #  P 0/1 L  0/1
+    - E.G. T +25 . 625 A X 10 Y -50 Z 192 P 0 L 1
 
     0 - Temperature Data
     1 - Positive/Negative Sym  w/ 0-128 celsius whole value
@@ -40,8 +40,8 @@ E.G. T +25 . 625 A X 10 Y -50 Z 192 P 0 L 1
 - JSON (like)
     - { withouth a ? following starts Parsing of message.
     - Similar to {JSON:FOMAT, MESSAGE:CODING}
-{ Key:Value, Key:Value }
-E.G. {T:+25.625,X:10,Y:-50,Z:192,P:0,L:1,G:3}
+    - { Key:Value, Key:Value }
+    - E.G. {T:+25.625,X:10,Y:-50,Z:192,P:0,L:1,G:3}
 
     - Keys
         - 'T' : Temperature
