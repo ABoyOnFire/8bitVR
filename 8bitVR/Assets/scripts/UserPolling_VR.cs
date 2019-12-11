@@ -19,7 +19,7 @@ public class UserPolling_VR : MonoBehaviour
 
     // This is incase I wish to share COM BUS with multiple Game Object
     // Currently my Bridge manages everything
-    public embeddedBridge embeddedData;
+    public EmbeddedBridge embeddedData;
 
     // Initialization
     void Start()

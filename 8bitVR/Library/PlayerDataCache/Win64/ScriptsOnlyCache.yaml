@@ -1,9 +1,9 @@
 ScriptsOnlyBuild:
   usedScripts:
     Assembly-CSharp.dll:
+    - EmbeddedBridge
     - SerialController
     - UserPolling_VR
-    - embeddedBridge
     SteamVR.dll:
     - Valve.VR.InteractionSystem.BodyCollider
     - Valve.VR.InteractionSystem.ControllerButtonHints
@@ -880,7 +880,7 @@ ScriptsOnlyBuild:
     className: Player
   - hash:
       serializedVersion: 2
-      Hash: ea13f66d373c0048e69e9e01799d05fe
+      Hash: 58a3084dcf210857a08719b1def25afc
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: UserPolling_VR
@@ -1108,10 +1108,10 @@ ScriptsOnlyBuild:
     className: TMP_SpriteAnimator
   - hash:
       serializedVersion: 2
-      Hash: 4ca5047a2d8fcfca343c31521af72d64
+      Hash: 26f32f2decf57a500b490441e367ff4d
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
-    className: embeddedBridge
+    className: EmbeddedBridge
   - hash:
       serializedVersion: 2
       Hash: fa5d069645c5f38a362924187ca1cb5d
@@ -1667,4 +1667,4 @@ ScriptsOnlyBuild:
   platform: 19
   scenePathNames:
   - Assets/Scenes/ces2020.unity
-  playerPath: E:/Projects/builds/12-4-19/8bitVR.exe
+  playerPath: E:/Projects/builds/12-8-19/8bitVR.exe

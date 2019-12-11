@@ -5,7 +5,7 @@
       "app_key": "application.generated.unity.8bitvr.exe",
       "launch_type": "url",
       "url": "steam://launch/",
-      "action_manifest_path": "K:\\gameWork\\git\\Ardity\\8bitVR\\actions.json",
+      "action_manifest_path": "K:\\gameWork\\git\\test\\8bitVR\\8bitVR\\actions.json",
       "strings": {
         "en_us": {
           "name": "8bitVR [Testing]"
