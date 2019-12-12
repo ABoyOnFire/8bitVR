@@ -26,11 +26,11 @@ public class EmbeddedBridge : MonoBehaviour
     public Text tempText;
 
     private const float xOstart =   (-1.5f);
-    private const float zOstart =   (-1.85f);
+    private const float zOstart =   (0.5f);
 
-    private const float xYOstart =  (0.0f);
-    private const float yYstart =   (-0.5f);
-    private const float zYstart =   (-1.0f);
+    private const float xYOstart =  (2.0f);
+    private const float yYstart =   (1.5f);
+    private const float zYstart =   (1.0f);
 
     private float [] defaultMovePosition = {0.0f, 3.0f, 0.0f };
     private SerialController upstreamSerialBus = null;
@@ -176,7 +176,6 @@ public class EmbeddedBridge : MonoBehaviour
                         tempText.text = "+";
                     }
                     tempText.text = tempText.text + tempValue + "." + tempDecimalHex;
-                    Debug.Log(tempText.text);
                     if (tempValue >= 29)
                     {
                         roomTemp.enabled = false;
@@ -241,36 +240,114 @@ public class EmbeddedBridge : MonoBehaviour
                     string axString = string.Copy(pair.Value);
                     string ayString = string.Copy(pair.Value);
                     string azString = string.Copy(pair.Value);
-
-                    Debug.Log(pair.Value);
+                    bool xNegative = false;
+                    bool yNegative = false;
+                    bool zNegative = false;
 
                     axString = axString.Substring(2, 2) + axString.Substring(0, 2);
                     ayString = ayString.Substring(6, 2) + ayString.Substring(4, 2);
                     azString = azString.Substring(10, 2) + azString.Substring(8, 2);
 
-                    Debug.Log(axString);
-                    Debug.Log(ayString);
-                    Debug.Log(azString);
                     int axValue = int.Parse(axString, System.Globalization.NumberStyles.HexNumber);
                     int ayValue = int.Parse(ayString, System.Globalization.NumberStyles.HexNumber);
                     int azValue = int.Parse(azString, System.Globalization.NumberStyles.HexNumber);
- 
-                    Debug.Log(axValue);
-                    Debug.Log(ayValue);
-                    Debug.Log(azValue);
-                    
-                    float xfloat = (axValue/2000) + defaultMovePosition[0];
-                    float yfloat = (ayValue / 2000) + defaultMovePosition[1];
-                    float zfloat = (azValue / 2000) + defaultMovePosition[2];
 
-                    float axAdjust = (axValue / 2000) + zOstart;
-                    float ayAdjust = (axValue / 2000) + zOstart;
-                    float azAdjust = (axValue / 2000) + zOstart;
-                    
-                    moveObject.transform.position = new Vector3(axValue, ayValue, azValue);
+                    if (axValue > 0x800)
+                    {
+                        axValue = 0xFFF - axValue;
+                        xNegative = true;
+                    }
+                    if (ayValue > 0x800)
+                    {
+                        ayValue = 0xFFF - ayValue;
+                        xNegative = true;
+                    }
+                    if (azValue > 0x800)
+                    {
+                        azValue = 0xFFF - azValue;
+                        xNegative = true;
+                    }
+
+                    float xfloat = (float)(axValue / 2000.00f);
+                    float yfloat = (float)(ayValue / 2000.00f);
+                    float zfloat = (float)(azValue / 2000.00f);
+                    float axAdjust = 0.0f;
+                    float ayAdjust = 0.0f;
+                    float azAdjust = 0.0f;
+                    float xObjectPos = 0.0f;
+                    float yObjectPos = 0.0f;
+                    float zObjectPos = 0.0f;
+
+                    if (xNegative == true)
+                    {
+                        axAdjust = xfloat + zOstart;
+                        xObjectPos = xfloat + defaultMovePosition[0];
+                    }
+                    else
+                    {
+                        axAdjust = zOstart - xfloat;
+                        xObjectPos = defaultMovePosition[0] - xfloat;
+                    }
+                    if (yNegative == true)
+                    {
+                        ayAdjust = yfloat + zOstart;
+                        yObjectPos = yfloat + defaultMovePosition[1];
+                    }
+                    else
+                    {
+                        ayAdjust = zOstart - yfloat;
+                        yObjectPos = defaultMovePosition[1] - yfloat;
+                    }
+                    if (zNegative == true)
+                    {
+                        azAdjust = zfloat + zOstart;
+                        zObjectPos = zfloat + defaultMovePosition[2];
+                    }
+                    else
+                    {
+                        azAdjust = zOstart - zfloat;
+                        zObjectPos =  defaultMovePosition[2] - zfloat;
+                    }
+
+                    // Update Text on Screen
+                    if (xNegative)
+                    {
+                        xText.text = "-" + axValue.ToString();
+                    }
+                    else
+                    {
+                        xText.text = axValue.ToString();
+                    }
+                    if (yNegative)
+                    { 
+                        yText.text = "-" + ayValue.ToString();
+                    }
+                    else
+                    {
+                        yText.text = ayValue.ToString();
+                    }
+                    if (zNegative)
+                    {
+                        zText.text = "-" + azValue.ToString();
+                    }
+                    else
+                    {
+                        zText.text = azValue.ToString();
+                    }
+                    // Move Things
+                    moveObject.transform.position = new Vector3(xObjectPos, yObjectPos, zObjectPos);
                     xObject.transform.position = new Vector3(xOstart, xYOstart, axAdjust);
-                    yObject.transform.position = new Vector3(xOstart, xYOstart, ayAdjust);
-                    zObject.transform.position = new Vector3(xOstart, xYOstart, azAdjust);
+                    yObject.transform.position = new Vector3(xOstart, yYstart, ayAdjust);
+                    zObject.transform.position = new Vector3(xOstart, zYstart, azAdjust);
+                    /*
+                    Debug.Log(xText.text);
+                    Debug.Log(yText.text);
+                    Debug.Log(zText.text);
+                    Debug.Log(moveObject.transform.position);
+                    Debug.Log(xObject.transform.position);
+                    Debug.Log(yObject.transform.position);
+                    Debug.Log(zObject.transform.position);
+                    */
                     break;
                 case ("X"):
                     // X Accelerometer
