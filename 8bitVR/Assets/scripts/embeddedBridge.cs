@@ -90,19 +90,12 @@ public class EmbeddedBridge : MonoBehaviour
         }
     }
 
-    public bool processMessageData(string message)
+    public bool ProcessMessageData(string message)
     {
-        // Prototype Data Message Format
-        /*
-        if (message.StartsWith("T"))
-        {
-            return processLegacyFormat(message);
-        }
-        */
         if (message.StartsWith("{"))
             {
             // Parse new data format
-            return processJSONFormat(message);
+            return ProcessJSONFormat(message);
         }
         else
         {
@@ -122,7 +115,242 @@ public class EmbeddedBridge : MonoBehaviour
         public string mcp9844_whole;   // 8 bits
         public string mcp9844_decimal; // 4 bits
     };   
-    private bool processJSONFormat(string message)
+
+    private void ProcessTemperatureTask(string passedValue)
+    {
+        // Temperature
+        mcp9844_reg_t registerSetting;
+        string fixedOrder = passedValue.Substring(2, 2) + passedValue.Substring(0, 2);
+        registerSetting.mcp9844_flags = fixedOrder.Substring(0, 1);
+        registerSetting.mcp9844_whole = fixedOrder.Substring(1, 2);
+        registerSetting.mcp9844_decimal = fixedOrder.Substring(3, 1);
+        int tempValue = int.Parse(registerSetting.mcp9844_whole, System.Globalization.NumberStyles.HexNumber);
+        int tempDecimalHex = int.Parse(registerSetting.mcp9844_decimal, System.Globalization.NumberStyles.HexNumber);
+        int tempFlags = int.Parse(registerSetting.mcp9844_flags, System.Globalization.NumberStyles.HexNumber);
+        float convertMath = tempDecimalHex;
+        convertMath = (convertMath * 62.5f);
+        tempDecimalHex = (int)convertMath;
+
+        if (tempValue >= 29)
+        {
+            roomTemp.enabled = false;
+            roomHot.enabled = true;
+            roomCool.enabled = false;
+        }
+        else if (tempValue <= 25)
+        {
+            roomTemp.enabled = false;
+            roomHot.enabled = false;
+            roomCool.enabled = true;
+        }
+        else
+        {
+            roomTemp.enabled = true;
+            roomHot.enabled = false;
+            roomCool.enabled = false;
+        }
+
+        if ((tempFlags & 0x01) == 0x01)
+        {
+            tempText.text = "-";
+        }
+        else
+        {
+            tempText.text = "+";
+        }
+        tempText.text = tempText.text + tempValue + "." + tempDecimalHex;
+    }
+
+    private void ProcessPushButtonTask(string passedValue)
+    {
+        if (passedValue.Equals("01"))
+        {
+            vrLight.enabled = true;
+        }
+        else if (passedValue.Equals("00"))
+        {
+            vrLight.enabled = false;
+        }
+        else
+        {   // Error Condition
+            vrLight.enabled = false;
+        }
+    }
+
+    private void ProcessLedTask(string passedValue)
+    {
+        int ledhexValue = int.Parse(passedValue);
+        boardLED_0.enabled = false;
+        boardLED_1.enabled = false;
+        boardLED_2.enabled = false;
+        if ((ledhexValue & 0x1) == 0x1)
+        {
+            boardLED_0.enabled = true;
+        }
+        if ((ledhexValue & 0x2) == 0x2)
+        {
+            boardLED_1.enabled = true;
+        }
+        if ((ledhexValue & 0x3) == 0x3)
+        {
+            boardLED_2.enabled = true;
+        }
+    }
+
+    private void ProcessXaccelTask(string passedValue)
+    {
+        string axString = string.Copy(passedValue);
+        bool xNegative = false;
+        // Fix Order
+        axString = axString.Substring(2, 2) + axString.Substring(0, 2);
+        int axValue = int.Parse(axString, System.Globalization.NumberStyles.HexNumber);
+
+        if (axValue > 0x800)
+        {
+            axValue = 0xFFF - axValue;
+            xNegative = true;
+        }
+
+        float xfloat = (float)(axValue / 2000.00f);
+        float axAdjust;
+        float xObjectPos;
+
+        if (xNegative == true)
+        {
+            axAdjust = xfloat + zOstart;
+            xObjectPos = xfloat + defaultMovePosition[0];
+        }
+        else
+        {
+            axAdjust = zOstart - xfloat;
+            xObjectPos = defaultMovePosition[0] - xfloat;
+        }
+
+        // Update Text on Screen
+        if (xNegative)
+        {
+            xText.text = "-" + axValue.ToString();
+        }
+        else
+        {
+            xText.text = axValue.ToString();
+        }
+
+        // Move Things
+        moveObject.transform.position = new Vector3(xObjectPos, moveObject.transform.position.y, moveObject.transform.position.z);
+        xObject.transform.position = new Vector3(xOstart, xYOstart, axAdjust);
+    }
+
+    private void ProcessYaccelTask(string passedValue)
+    {
+        string ayString = string.Copy(passedValue);
+        bool yNegative = false;
+        // Fix Order
+        ayString = ayString.Substring(2, 2) + ayString.Substring(0, 2);
+        int ayValue = int.Parse(ayString, System.Globalization.NumberStyles.HexNumber);
+
+        if (ayValue > 0x800)
+        {
+            ayValue = 0xFFF - ayValue;
+            yNegative = true;
+        }
+
+        float yfloat = (float)(ayValue / 2000.00f);
+        float ayAdjust = 0.0f;
+        float yObjectPos = 0.0f;
+
+        if (yNegative == true)
+        {
+            ayAdjust = yfloat + zOstart;
+            yObjectPos = yfloat + defaultMovePosition[1];
+        }
+        else
+        {
+            ayAdjust = zOstart - yfloat;
+            yObjectPos = defaultMovePosition[1] - yfloat;
+        }
+
+        // Update Text on Screen
+        if (yNegative)
+        {
+            yText.text = "-" + ayValue.ToString();
+        }
+        else
+        {
+            yText.text = ayValue.ToString();
+        }
+        // Move Things
+        moveObject.transform.position = new Vector3(moveObject.transform.position.x, yObjectPos, moveObject.transform.position.z);
+        yObject.transform.position = new Vector3(xOstart, yYstart, ayAdjust);
+    }
+
+    private void ProcessZaccelTask(string passedValue)
+    {
+        string azString = string.Copy(passedValue);
+        bool zNegative = false;
+        // Fix Order
+        azString = azString.Substring(2, 2) + azString.Substring(0, 2);
+        int azValue = int.Parse(azString, System.Globalization.NumberStyles.HexNumber);
+        if (azValue > 0x800)
+        {
+            azValue = 0xFFF - azValue;
+            zNegative = true;
+        }
+        float zfloat = (float)(azValue / 2000.00f);
+        float azAdjust = 0.0f;
+        float zObjectPos = 0.0f;
+
+        if (zNegative == true)
+        {
+            azAdjust = zfloat + zOstart;
+            zObjectPos = zfloat + defaultMovePosition[2];
+        }
+        else
+        {
+            azAdjust = zOstart - zfloat;
+            zObjectPos = defaultMovePosition[2] - zfloat;
+        }
+
+        // Update Text on Screen
+        if (zNegative)
+        {
+            zText.text = "-" + azValue.ToString();
+        }
+        else
+        {
+            zText.text = azValue.ToString();
+        }
+        // Move Things
+        moveObject.transform.position = new Vector3(moveObject.transform.position.x, moveObject.transform.position.y, zObjectPos);
+        zObject.transform.position = new Vector3(xOstart, zYstart, azAdjust);
+    }
+
+    private void ProcessGeneralTask(string passedValue)
+    {
+        // General
+        int genhexValue = int.Parse(passedValue);
+        int genhexValue_0 = 0x0;
+        int genhexValue_1 = 0x0;
+        generalAction_0.enabled = false;
+        generalAction_1.enabled = false;
+        genhexValue_0 = (genhexValue & 0x1);
+        genhexValue_1 = (genhexValue & 0x2);
+        if (genhexValue_0 == 0x1)
+        {
+            generalAction_0.enabled = true;
+        }
+        if (genhexValue_1 == 0x2)
+        {
+            generalAction_1.enabled = true;
+        }
+    }
+
+    private void ProcessSerialTask(string passedMessage)
+    {
+        Debug.Log("-> " + passedMessage);
+        upstreamSerialBus.SendSerialMessage(passedMessage);
+    }
+    private bool ProcessJSONFormat(string message)
     {
         bool validMessage = false;
         var map = new Dictionary<string, string>();
@@ -153,393 +381,44 @@ public class EmbeddedBridge : MonoBehaviour
             switch (pair.Key)
             {
                 case ("T"):
-                    // Temperature
-                    mcp9844_reg_t registerSetting;
-                    tempText.text = pair.Value;
-                    string fixedOrder = tempText.text.Substring(2, 2) + tempText.text.Substring(0, 2);
-                    registerSetting.mcp9844_flags = fixedOrder.Substring(0, 1);
-                    registerSetting.mcp9844_whole = fixedOrder.Substring(1, 2);
-                    registerSetting.mcp9844_decimal = fixedOrder.Substring(3, 1);
-                    int tempValue = int.Parse(registerSetting.mcp9844_whole, System.Globalization.NumberStyles.HexNumber);
-                    int tempDecimalHex = int.Parse(registerSetting.mcp9844_decimal, System.Globalization.NumberStyles.HexNumber);
-                    int tempFlags = int.Parse(registerSetting.mcp9844_flags, System.Globalization.NumberStyles.HexNumber);
-                    float convertMath = 0;
-                    convertMath = tempDecimalHex;
-                    convertMath = convertMath * 62.5f;
-                    tempDecimalHex = (int)convertMath;
-                    if ((tempFlags & 0x01) == 0x01)
-                    {
-                        tempText.text = "-";
-                    }
-                    else
-                    {
-                        tempText.text = "+";
-                    }
-                    tempText.text = tempText.text + tempValue + "." + tempDecimalHex;
-                    if (tempValue >= 29)
-                    {
-                        roomTemp.enabled = false;
-                        roomHot.enabled = true;
-                        roomCool.enabled = false;
-                    }
-                    else if (tempValue <= 25)
-                    {
-                        roomTemp.enabled = false;
-                        roomHot.enabled = false;
-                        roomCool.enabled = true;
-                    }
-                    else
-                    {
-                        roomTemp.enabled = true;
-                        roomHot.enabled = false;
-                        roomCool.enabled = false;
-                    }
+                    ProcessTemperatureTask(pair.Value);
                     break;
                 case ("P"):
-                    // Push Button
-                    if (pair.Value.Equals("01"))
-                    {
-                        vrLight.enabled = true;
-                    }
-                    else if (pair.Value.Equals("00"))
-                    {
-                        vrLight.enabled = false;
-                    }
-                    else
-                    {   // Error Condition
-                        vrLight.enabled = false;
-                    }
+                    ProcessPushButtonTask(pair.Value);
                     break;
                 case ("L"):
-                    // LEDs
-                    int ledhexValue = int.Parse(pair.Value);
-                    int stateLED_0 = 0x0;
-                    int stateLED_1 = 0x0;
-                    int stateLED_2 = 0x0;
-                    boardLED_0.enabled = false;
-                    boardLED_1.enabled = false;
-                    boardLED_2.enabled = false;
-                    stateLED_0 = (ledhexValue & 0x1);
-                    stateLED_1 = (ledhexValue & 0x2);
-                    stateLED_2 = (ledhexValue & 0x3);
-                    if (stateLED_0 == 0x1)
-                    {
-                        boardLED_0.enabled = true;
-                    }
-                    if (stateLED_1 == 0x2)
-                    {
-                        boardLED_1.enabled = true;
-                    }
-                    if (stateLED_2 == 0x3)
-                    {
-                        boardLED_2.enabled = true;
-                    }
+                    ProcessLedTask(pair.Value);
+
                     break;
                 case ("A"):
                     // Accelerometer
-                    string axString = string.Copy(pair.Value);
-                    string ayString = string.Copy(pair.Value);
-                    string azString = string.Copy(pair.Value);
-                    bool xNegative = false;
-                    bool yNegative = false;
-                    bool zNegative = false;
-
-                    axString = axString.Substring(2, 2) + axString.Substring(0, 2);
-                    ayString = ayString.Substring(6, 2) + ayString.Substring(4, 2);
-                    azString = azString.Substring(10, 2) + azString.Substring(8, 2);
-
-                    int axValue = int.Parse(axString, System.Globalization.NumberStyles.HexNumber);
-                    int ayValue = int.Parse(ayString, System.Globalization.NumberStyles.HexNumber);
-                    int azValue = int.Parse(azString, System.Globalization.NumberStyles.HexNumber);
-
-                    if (axValue > 0x800)
-                    {
-                        axValue = 0xFFF - axValue;
-                        xNegative = true;
-                    }
-                    if (ayValue > 0x800)
-                    {
-                        ayValue = 0xFFF - ayValue;
-                        xNegative = true;
-                    }
-                    if (azValue > 0x800)
-                    {
-                        azValue = 0xFFF - azValue;
-                        xNegative = true;
-                    }
-
-                    float xfloat = (float)(axValue / 2000.00f);
-                    float yfloat = (float)(ayValue / 2000.00f);
-                    float zfloat = (float)(azValue / 2000.00f);
-                    float axAdjust = 0.0f;
-                    float ayAdjust = 0.0f;
-                    float azAdjust = 0.0f;
-                    float xObjectPos = 0.0f;
-                    float yObjectPos = 0.0f;
-                    float zObjectPos = 0.0f;
-
-                    if (xNegative == true)
-                    {
-                        axAdjust = xfloat + zOstart;
-                        xObjectPos = xfloat + defaultMovePosition[0];
-                    }
-                    else
-                    {
-                        axAdjust = zOstart - xfloat;
-                        xObjectPos = defaultMovePosition[0] - xfloat;
-                    }
-                    if (yNegative == true)
-                    {
-                        ayAdjust = yfloat + zOstart;
-                        yObjectPos = yfloat + defaultMovePosition[1];
-                    }
-                    else
-                    {
-                        ayAdjust = zOstart - yfloat;
-                        yObjectPos = defaultMovePosition[1] - yfloat;
-                    }
-                    if (zNegative == true)
-                    {
-                        azAdjust = zfloat + zOstart;
-                        zObjectPos = zfloat + defaultMovePosition[2];
-                    }
-                    else
-                    {
-                        azAdjust = zOstart - zfloat;
-                        zObjectPos =  defaultMovePosition[2] - zfloat;
-                    }
-
-                    // Update Text on Screen
-                    if (xNegative)
-                    {
-                        xText.text = "-" + axValue.ToString();
-                    }
-                    else
-                    {
-                        xText.text = axValue.ToString();
-                    }
-                    if (yNegative)
-                    { 
-                        yText.text = "-" + ayValue.ToString();
-                    }
-                    else
-                    {
-                        yText.text = ayValue.ToString();
-                    }
-                    if (zNegative)
-                    {
-                        zText.text = "-" + azValue.ToString();
-                    }
-                    else
-                    {
-                        zText.text = azValue.ToString();
-                    }
-                    // Move Things
-                    moveObject.transform.position = new Vector3(xObjectPos, yObjectPos, zObjectPos);
-                    xObject.transform.position = new Vector3(xOstart, xYOstart, axAdjust);
-                    yObject.transform.position = new Vector3(xOstart, yYstart, ayAdjust);
-                    zObject.transform.position = new Vector3(xOstart, zYstart, azAdjust);
-                    /*
-                    Debug.Log(xText.text);
-                    Debug.Log(yText.text);
-                    Debug.Log(zText.text);
-                    Debug.Log(moveObject.transform.position);
-                    Debug.Log(xObject.transform.position);
-                    Debug.Log(yObject.transform.position);
-                    Debug.Log(zObject.transform.position);
-                    */
+                    string axString = pair.Value.Substring(0, 2) + pair.Value.Substring(2, 2);
+                    string ayString = pair.Value.Substring(4, 2) + pair.Value.Substring(6, 2);
+                    string azString = pair.Value.Substring(8, 2) + pair.Value.Substring(10, 2);
+                    ProcessXaccelTask(axString);
+                    ProcessYaccelTask(ayString);
+                    ProcessZaccelTask(azString);
                     break;
                 case ("X"):
-                    // X Accelerometer
-                    xText.text = pair.Value;
-                    string xString = "";
-                    xString = xText.text.ToString();
-                    float xValue = (float.Parse(xString) / 4000) + defaultMovePosition[0];
-                    float xAdjust = (float.Parse(xString) / 4000) + zOstart;
-
-                    moveObject.transform.position = new Vector3(xValue, transform.position.y, transform.position.z);
-                    xObject.transform.position = new Vector3(xOstart, xYOstart, xAdjust);
+                    ProcessXaccelTask(pair.Value);
                     break;
                 case ("Y"):
-                    // Y Accelerometer
-                    yText.text = pair.Value;
-                    string yString = "";
-                    yString = yText.text.ToString();
-                    float yValue = (float.Parse(yString) / 4000) + defaultMovePosition[1];
-                    float yAdjust = (float.Parse(yString) / 4000) + zOstart;
-
-                    moveObject.transform.position = new Vector3(transform.position.x, yValue, transform.position.z);
-                    xObject.transform.position = new Vector3(xOstart, yAdjust, zOstart);
+                    ProcessYaccelTask(pair.Value);
                     break;
                 case ("Z"):
-                    // Z Accelerometer
-                    zText.text = pair.Value;
-                    string zString = "";
-                    zString = zText.text.ToString();
-                    float zValue = (float.Parse(zString) / 4000) + defaultMovePosition[2];
-                    float zAdjust = (float.Parse(zString) / 4000) + zOstart;
-
-                    moveObject.transform.position = new Vector3(transform.position.x, transform.position.y, zValue);
-                    xObject.transform.position = new Vector3(xOstart, xYOstart, zAdjust);
+                    ProcessZaccelTask(pair.Value);
                     break;
                 case ("G"):
-                    // General
-                    int genhexValue = int.Parse(pair.Value);
-                    int genhexValue_0 = 0x0;
-                    int genhexValue_1 = 0x0;
-                    generalAction_0.enabled = false;
-                    generalAction_1.enabled = false;
-                    genhexValue_0 = (genhexValue & 0x1);
-                    genhexValue_1 = (genhexValue & 0x2);
-                    if (genhexValue_0 == 0x1)
-                    {
-                        generalAction_0.enabled = true;
-                    }
-                    if (genhexValue_1 == 0x2)
-                    {
-                        generalAction_1.enabled = true;
-                    }
+                    ProcessGeneralTask(pair.Value);
                     break;
                 case ("S"):
-                    // Echo out upStream
-                    Debug.Log("-> " + pair.Value);
-                    upstreamSerialBus.SendSerialMessage(message);
+                    ProcessSerialTask(pair.Value);
                     break;
                 default:
                     Debug.Log("JSON like GOT: " + pair.Key + " w/ " + pair.Value);
                     validMessage = false;
                     break;
             }
-        }
-        return validMessage;
-    }
-    private bool processLegacyFormat(string message)
-    {
-        bool validMessage = false;
-        string[] splitMessage = message.Split(' ');
-        int counter = 0;
-        foreach (string msg in splitMessage)
-        {
-            Debug.Log(counter++);
-            Debug.Log(msg);
-        }
-        // Push Button Actions
-        if (splitMessage[11] == "P")
-        {
-            if (splitMessage[12] == "0")
-            {
-                vrLight.enabled = true;
-            }
-            else if (splitMessage[12] == "1")
-            {
-                vrLight.enabled = false;
-            }
-            else
-            {
-                vrLight.enabled = false;
-            }
-            validMessage = true;
-        }
-        else
-        {
-            validMessage = false;
-        }
-
-        // LED Actions
-        if (splitMessage[13] == "L")
-        {
-            if (splitMessage[14] == "0")
-            {
-                // 
-            }
-            else if (splitMessage[1] == "1")
-            {
-                //LED0.enabled = false;
-            }
-            else
-            {
-                //LED0.enabled = false;
-            }
-            validMessage = true;
-        }
-        else
-        {
-            validMessage = false;
-        }
-        // Temperature Sensor
-        if (splitMessage[0] == "T")
-        {
-            tempText.text = splitMessage[1].Replace("+", "");
-
-            tempText.text += splitMessage[2] + "." + splitMessage[3];
-
-            int tempValue = (int.Parse(splitMessage[2]));
-
-            if (tempValue >= 29)
-            {
-                roomTemp.enabled = false;
-                roomHot.enabled = true;
-                roomCool.enabled = false;
-            }
-            else if (tempValue <= 25)
-            {
-                roomTemp.enabled = false;
-                roomHot.enabled = false;
-                roomCool.enabled = true;
-            }
-            else
-            {
-                roomTemp.enabled = true;
-                roomHot.enabled = false;
-                roomCool.enabled = false;
-            }
-            /*
-            string tempString = "";
-            tempString = tempText.text.ToString();
-            int tempValue = int.Parse(tempString);
-            */
-            validMessage = true;
-        }
-        else
-        {
-            validMessage = false;
-        }
-
-        // Accelerometer
-        if (splitMessage[4] == "A")
-        {
-            xText.text = splitMessage[6];
-            yText.text = splitMessage[8];
-            zText.text = splitMessage[10];
-
-            string xString = "";
-            string yString = "";
-            string zString = "";
-
-            xString = xText.text.ToString();
-            yString = yText.text.ToString();
-            zString = zText.text.ToString();
-
-            float xValue = (float.Parse(xString) / 4000) + defaultMovePosition[0];
-            float yValue = (float.Parse(yString) / 4000) + defaultMovePosition[1];
-            float zValue = (float.Parse(zString) / 4000) + defaultMovePosition[2];
-
-            float xAdjust = (float.Parse(xString) / 4000) + zOstart;
-            float yAdjust = (float.Parse(yString) / 4000) + zOstart;
-            float zAdjust = (float.Parse(zString) / 4000) + zOstart;
-
-            moveObject.transform.position = new Vector3(xValue, yValue, zValue);
-
-            xObject.transform.position = new Vector3(xOstart, xYOstart, xAdjust);
-            yObject.transform.position = new Vector3(xOstart, yYstart, yAdjust);
-            zObject.transform.position = new Vector3(xOstart, zYstart, zAdjust);
-
-            //Debug.Log(moveObject.transform.position);
-            validMessage = true;
-        }
-        else
-        {
-            validMessage = false;
         }
         return validMessage;
     }

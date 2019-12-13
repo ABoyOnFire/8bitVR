@@ -59,7 +59,7 @@ public class UserPolling_VR : MonoBehaviour
         else
         {
             // Pass to Object for inspection
-            embeddedData.processMessageData(message);
+            embeddedData.ProcessMessageData(message);
             // Debug.Log("Message arrived: " + message);
         }
     }
