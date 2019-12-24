@@ -1,6 +1,7 @@
 ScriptsOnlyBuild:
   usedScripts:
     Assembly-CSharp.dll:
+    - CloneText
     - EmbeddedBridge
     - SerialController
     - UserPolling_VR
@@ -39,6 +40,8 @@ ScriptsOnlyBuild:
     - UnityEditor.Graphs.AnimationStateMachine.Graph
     - UnityEditor.Graphs.AnimationStateMachine.GraphGUI
     - UnityEditor.Graphs.AnimatorControllerTool
+    UnityEditor.TestRunner.dll:
+    - UnityEditor.TestTools.TestRunner.TestListCacheData
     UnityEngine.UI.dll:
     - UnityEngine.EventSystems.EventSystem
     - UnityEngine.EventSystems.StandaloneInputModule
@@ -92,6 +95,8 @@ ScriptsOnlyBuild:
     - Class: 92
       Script: {instanceID: 0}
     - Class: 95
+      Script: {instanceID: 0}
+    - Class: 102
       Script: {instanceID: 0}
     - Class: 104
       Script: {instanceID: 0}
@@ -185,6 +190,8 @@ ScriptsOnlyBuild:
       Script: {instanceID: 11096}
     - Class: 114
       Script: {instanceID: 11138}
+    - Class: 114
+      Script: {instanceID: 340078}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 120
@@ -542,18 +549,6 @@ ScriptsOnlyBuild:
     assemblyName: SteamVR.dll
     namespaceName: Valve.VR.InteractionSystem
     className: Equippable
-  - hash:
-      serializedVersion: 2
-      Hash: 71bb6a6b6c8f052f948db64c7dd3ca4f
-    assemblyName: UnityEngine.Advertisements.dll
-    namespaceName: UnityEngine.Advertisements
-    className: CallbackExecutor
-  - hash:
-      serializedVersion: 2
-      Hash: 71bb6a6b6c8f052f948db64c7dd3ca4f
-    assemblyName: UnityEngine.Advertisements.dll
-    namespaceName: UnityEngine.Advertisements.Editor
-    className: Placeholder
   - hash:
       serializedVersion: 2
       Hash: 0a178a1c85198b9dad8fc799b8bfaa65
@@ -1108,7 +1103,7 @@ ScriptsOnlyBuild:
     className: TMP_SpriteAnimator
   - hash:
       serializedVersion: 2
-      Hash: 26f32f2decf57a500b490441e367ff4d
+      Hash: ad01376a6dcbf61efe8c2d7c11ff8f36
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: EmbeddedBridge
@@ -1664,7 +1659,13 @@ ScriptsOnlyBuild:
     assemblyName: Unity.Timeline.dll
     namespaceName: UnityEngine.Timeline
     className: PlayableTrack
+  - hash:
+      serializedVersion: 2
+      Hash: 1585673b48151000a04a3260cf35fadc
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: CloneText
   platform: 19
   scenePathNames:
   - Assets/Scenes/ces2020.unity
-  playerPath: E:/Projects/builds/12-8-19/8bitVR.exe
+  playerPath: E:/Projects/builds/12-24-19/8bitVR.exe

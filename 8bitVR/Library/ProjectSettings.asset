@@ -305,6 +305,7 @@ PlayerSettings:
     m_Devices:
     - OpenVR
     - Oculus
+    - MockHMD
   m_BuildTargetEnableVuforiaSettings: []
   openGLRequireES31: 0
   openGLRequireES31AEP: 0

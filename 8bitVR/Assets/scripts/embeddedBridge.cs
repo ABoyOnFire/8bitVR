@@ -24,6 +24,7 @@ public class EmbeddedBridge : MonoBehaviour
     public Text yText;
     public Text zText;
     public Text tempText;
+    public TextMesh screenText;
 
     private const float xOstart =   (-1.5f);
     private const float zOstart =   (0.5f);
@@ -32,10 +33,12 @@ public class EmbeddedBridge : MonoBehaviour
     private const float yYstart =   (1.5f);
     private const float zYstart =   (1.0f);
 
-    private float [] defaultMovePosition = {0.0f, 3.0f, 0.0f };
-    private SerialController upstreamSerialBus = null;
+    private float [] defaultMovePosition = {0.0f, 1.5f, 4.0f };
+    private SerialController upstreamSerialBus;
 
     const bool defaultLedStartState = false;
+
+    const string DEFAULT_MESSAGE = "Hello World";
 
     // Start is called before the first frame update
     void Start()
@@ -57,6 +60,8 @@ public class EmbeddedBridge : MonoBehaviour
         xObject.transform.position = new Vector3(xOstart, xYOstart, zOstart);
         yObject.transform.position = new Vector3(xOstart, yYstart, zOstart);
         zObject.transform.position = new Vector3(xOstart, zYstart, zOstart);
+        upstreamSerialBus = GameObject.Find("SerialController").GetComponent<SerialController>();
+        screenText.text = DEFAULT_MESSAGE;
     }
 
     void UpstreamSerialCommunication(SerialController upstreamBus)
@@ -74,12 +79,12 @@ public class EmbeddedBridge : MonoBehaviour
         // Keyboard LED Test
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            upstreamSerialBus.SendSerialMessage("led 0 on");
+            upstreamSerialBus.SendSerialMessage("led data on");
         }
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-            upstreamSerialBus.SendSerialMessage("led0 off");
+            upstreamSerialBus.SendSerialMessage("led data off");
         }
         // Keyboard Actions
         if (Input.GetKeyDown(KeyCode.F12) && (isResetting == false))
@@ -348,6 +353,7 @@ public class EmbeddedBridge : MonoBehaviour
     private void ProcessSerialTask(string passedMessage)
     {
         Debug.Log("-> " + passedMessage);
+        screenText.text = passedMessage;
         upstreamSerialBus.SendSerialMessage(passedMessage);
     }
     private bool ProcessJSONFormat(string message)
