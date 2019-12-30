@@ -15,9 +15,6 @@ public class EmbeddedBridge : MonoBehaviour
     public Light boardLED_0;
     public Light boardLED_1;
     public Light boardLED_2;
-    public Light roomTemp;
-    public Light roomHot;
-    public Light roomCool;
     public Light generalAction_0;
     public Light generalAction_1;
     public Text xText;
@@ -26,14 +23,21 @@ public class EmbeddedBridge : MonoBehaviour
     public Text tempText;
     public TextMesh screenText;
 
-    private const float xOstart =   (-1.5f);
-    private const float zOstart =   (0.5f);
+    private int pushRetainValue;
+    private int ledRetainValue;
+    private int gpioRetainValue;
+    private int tempRetainValue;
 
-    private const float xYOstart =  (2.0f);
-    private const float yYstart =   (1.5f);
-    private const float zYstart =   (1.0f);
+    private string displayText;
 
-    private float [] defaultMovePosition = {0.0f, 1.5f, 4.0f };
+    private const float xOstart = (-1.5f);
+    private const float zOstart = (0.5f);
+
+    private const float xYOstart = (2.0f);
+    private const float yYstart = (1.5f);
+    private const float zYstart = (1.0f);
+
+    private float[] defaultMovePosition = { 0.0f, 1.5f, 4.0f };
     private SerialController upstreamSerialBus;
 
     const bool defaultLedStartState = false;
@@ -53,15 +57,16 @@ public class EmbeddedBridge : MonoBehaviour
         yText.text = "";
         zText.text = "";
         tempText.text = "";
-        roomTemp.enabled = true;
-        roomHot.enabled = false;
-        roomCool.enabled = false;
         moveObject.transform.position = new Vector3(defaultMovePosition[0], defaultMovePosition[1], defaultMovePosition[2]);
         xObject.transform.position = new Vector3(xOstart, xYOstart, zOstart);
         yObject.transform.position = new Vector3(xOstart, yYstart, zOstart);
         zObject.transform.position = new Vector3(xOstart, zYstart, zOstart);
         upstreamSerialBus = GameObject.Find("SerialController").GetComponent<SerialController>();
         screenText.text = DEFAULT_MESSAGE;
+        displayText = screenText.text;
+        ledRetainValue = 0;
+        gpioRetainValue = 0;
+        tempRetainValue = 0;
     }
 
     void UpstreamSerialCommunication(SerialController upstreamBus)
@@ -72,29 +77,54 @@ public class EmbeddedBridge : MonoBehaviour
         }
     }
 
-    private bool isResetting = false;
     // Update is called once per frame
     void Update()
     {
-        // Keyboard LED Test
-        if (Input.GetKeyDown(KeyCode.Q))
+        // Update Display
+        string printString;
+        printString = displayText + "\r\n"
+                        + "Temp: " + tempText.text + "\r\n"
+                        + "X: " + xText.text + "\r\n"
+                        + "Y: " + yText.text + "\r\n"
+                        + "Z: " + zText.text;
+        screenText.text = printString;
+
+        // Keyboard Test
+        if (Input.GetKeyDown(KeyCode.P))
         {
-            upstreamSerialBus.SendSerialMessage("led data on");
+            Debug.Log("Test Key Press");
         }
 
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            upstreamSerialBus.SendSerialMessage("led data off");
-        }
         // Keyboard Actions
-        if (Input.GetKeyDown(KeyCode.F12) && (isResetting == false))
+        if (Input.GetKeyDown(KeyCode.F12))
         {
-            isResetting = true;
             SceneManager.LoadScene("ces2020");
-            isResetting = false;
         }
     }
 
+    public int GetPushValue()
+    {
+        return pushRetainValue;
+    }
+    public int GetLedValue()
+    {
+        return ledRetainValue;
+    }
+
+    public int GetGPIOValue()
+    {
+        return gpioRetainValue;
+    }
+
+    public int GetTempValue()
+    {
+        return tempRetainValue;
+    }
+
+    public void SendVrMessage(string message)
+    {
+        upstreamSerialBus.SendSerialMessage(message);
+    }
     public bool ProcessMessageData(string message)
     {
         if (message.StartsWith("{"))
@@ -136,24 +166,7 @@ public class EmbeddedBridge : MonoBehaviour
         convertMath = (convertMath * 62.5f);
         tempDecimalHex = (int)convertMath;
 
-        if (tempValue >= 29)
-        {
-            roomTemp.enabled = false;
-            roomHot.enabled = true;
-            roomCool.enabled = false;
-        }
-        else if (tempValue <= 25)
-        {
-            roomTemp.enabled = false;
-            roomHot.enabled = false;
-            roomCool.enabled = true;
-        }
-        else
-        {
-            roomTemp.enabled = true;
-            roomHot.enabled = false;
-            roomCool.enabled = false;
-        }
+        tempRetainValue = tempValue;
 
         if ((tempFlags & 0x01) == 0x01)
         {
@@ -168,18 +181,20 @@ public class EmbeddedBridge : MonoBehaviour
 
     private void ProcessPushButtonTask(string passedValue)
     {
-        if (passedValue.Equals("01"))
+        int pushhexValue = int.Parse(passedValue);
+        if ((pushhexValue & 0x1) == 0x1)
         {
             vrLight.enabled = true;
         }
-        else if (passedValue.Equals("00"))
-        {
+        else if ((pushhexValue & 0xFF) == 0x00)
+        {   // Check For 0x00
             vrLight.enabled = false;
         }
         else
-        {   // Error Condition
+        {   // Failure Condition
             vrLight.enabled = false;
         }
+        pushRetainValue = pushhexValue;
     }
 
     private void ProcessLedTask(string passedValue)
@@ -200,6 +215,8 @@ public class EmbeddedBridge : MonoBehaviour
         {
             boardLED_2.enabled = true;
         }
+
+        ledRetainValue = ledhexValue;
     }
 
     private void ProcessXaccelTask(string passedValue)
@@ -348,12 +365,14 @@ public class EmbeddedBridge : MonoBehaviour
         {
             generalAction_1.enabled = true;
         }
+
+        gpioRetainValue = genhexValue;
     }
 
     private void ProcessSerialTask(string passedMessage)
     {
         Debug.Log("-> " + passedMessage);
-        screenText.text = passedMessage;
+        displayText = passedMessage;
         upstreamSerialBus.SendSerialMessage(passedMessage);
     }
     private bool ProcessJSONFormat(string message)
